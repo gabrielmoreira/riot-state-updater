@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <script src="https://npmcdn.com/riot@2.5.0/riot+compiler.min.js"></script>
+    <script src="../../dist/riot-state-updater.js"></script>
+    <script type="riot/tag">
+    	<app>
+    		<h1>Hello, {name}!</h1>
+        <h3 if={elapsed}>{elapsed} elapsed!</h3>
+        this.bindState({
+          'name': 'user.name',
+          'elapsed': {
+            select: 'timer.elapsed',
+            value: function(elapsed) {
+              if (elapsed === 0) return "";
+              if (elapsed === 1) return "1 second";
+              if (elapsed >= 60 && elapsed < 120) return "1 minute";
+              if (elapsed < 60)
+                return elapsed + ' seconds';
+              else
+                return Math.floor(elapsed/60) + ' minutes';
+            }
+          }
+        });
+        this.on('update', function() {
+          console.log("tag was updated at", this.elapsed);
+        })
+    	</app>
+    </script>
+  </head>
+
+  <body>
+    <button onclick="javascript:fast();">fast</button>
+    <button onclick="javascript:normal();">normal</button>
+    <app></app>
+
+    <script>
+      // plain global state object
+      var GlobalState = {
+      	user: {name: 'Gabriel'},
+        timer: { elapsed: 0 }
+      };
+
+      var updateState = null;
+
+      function update() {
+        GlobalState.timer.elapsed++;
+        if (updateState) updateState();
+      }
+
+      // generic subscriber
+      function subscribe(update) {
+        updateState = update;
+      }
+
+      // generic getState
+      function getState() {
+        return GlobalState;
+      }
+
+      riot.mixin(RiotStateUpdater.GenericMixin(getState, subscribe));
+      riot.mount('*');
+
+      var millis = 1000;
+
+      function tick() {
+        console.log('tick');
+        update();
+        setTimeout(tick, millis);
+      }
+
+      function fast() {
+        millis = 100;
+      }
+
+      function normal() {
+        millis = 1000;
+      }
+
+      tick();
+    </script>
+  </body>
+
+</html>

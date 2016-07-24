@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <script src="https://npmcdn.com/riot@2.5.0/riot+compiler.min.js"></script>
+    <script src="https://npmcdn.com/redux@3.5.2/dist/redux.min.js"></script>
+    <script src="../../dist/riot-state-updater.js"></script>
+    <script type="riot/tag">
+      <app>
+        <h1>Hello, {name}!</h1>
+        <h3 if={seconds}>{seconds} second{seconds > 1 ? 's' : ''} elapsed!</h3>
+        this.bindState({'name': 'user.name', 'seconds': 'timer.elapsed'});
+      </app>
+    </script>
+  </head>
+
+  <body>
+    <button onclick="javascript:mount();">Mount</button>
+    <button onclick="javascript:unmount();">Unmount</button>
+    <div id="dynamic">
+    </div>
+    <script>
+      function userReducer(state, action) {
+        if (!state) state = {};
+        return state;
+      }
+
+      function timerReducer(state, action) {
+        if (!state) state = {elapsed: 0};
+        if (action.type==='TICK') return {elapsed: ++state.elapsed};
+        return state;
+      }
+
+      var reducers = Redux.combineReducers({
+        user: userReducer,
+        timer: timerReducer,
+      });
+
+      var Store = Redux.createStore(reducers, {
+      	user: {name: 'Gabriel'}
+      });
+
+      setInterval(function() {
+        Store.dispatch({type: 'TICK'});
+      }, 1000);
+
+      riot.mixin(RiotStateUpdater.StoreMixin(Store));
+
+      var tags;
+
+      function mount() {
+        if (!tags) {
+          var dynamic = document.getElementById('dynamic');
+          var app = document.createElement('app');
+          dynamic.appendChild(app);
+          tags = riot.mount('*');
+        }
+      }
+
+      function unmount() {
+        if (tags) {
+          tags.forEach(function(tag) {
+            tag.unmount();
+          });
+          tags = null;
+        }
+      }
+    </script>
+  </body>
+
+</html>
